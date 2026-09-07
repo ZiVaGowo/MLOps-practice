@@ -5,3 +5,4 @@ venv/
 data.csv
 mlflow.db
 .DS_Store
+*.joblib
