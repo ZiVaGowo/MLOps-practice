@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+venv/
+.venv/
+data.csv
+mlflow.db
+.DS_Store
