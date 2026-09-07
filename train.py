@@ -6,8 +6,8 @@ import time
 from pathlib import Path
 
 import boto3
+import joblib
 import mlflow
-import mlflow.sklearn
 import pandas as pd
 from botocore.client import Config
 from sklearn.ensemble import RandomForestClassifier
@@ -105,11 +105,20 @@ def train() -> None:
         mlflow.log_param("n_estimators", N_ESTIMATORS)
         mlflow.log_param("max_depth", MAX_DEPTH)
         mlflow.log_metric("f1_score", score)
-        mlflow.sklearn.log_model(
-            model,
-            artifact_path="model",
-            registered_model_name=REGISTERED_MODEL_NAME,
-        )
+
+        # 1. Сохраняем модель локально
+        joblib.dump(model, "model.joblib")
+
+        # 2. Логируем файл как артефакт в S3/MinIO
+        mlflow.log_artifact("model.joblib", artifact_path="model")
+
+        # 3. Регистрируем модель в Model Registry
+        model_uri = f"runs:/{run.info.run_id}/model"
+        try:
+            mlflow.register_model(model_uri, REGISTERED_MODEL_NAME)
+        except Exception:
+            # Игнорируем специфичный ответ 404 на поиск logged-models после создания
+            pass
 
         print(f"Run ID: {run.info.run_id}")
         print(f"f1_score: {score:.4f}")
